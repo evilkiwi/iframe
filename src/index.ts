@@ -231,6 +231,7 @@ export function useIFrame({
       attemptHandshake();
     } else {
       handle('_handshake_request', () => true);
+      setConnected(true);
     }
   }, []);
 
