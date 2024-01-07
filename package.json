@@ -1,6 +1,6 @@
 {
   "name": "@evilkiwi/iframe",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "React Utility Hook for cross-origin iFrame IPC",
   "files": [
     "build"

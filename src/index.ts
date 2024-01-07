@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { decodeErr, encodeErr, isErr } from './error';
 import { debug } from './logger';
@@ -13,10 +13,6 @@ export function generateId() {
   return Math.floor(Math.random() * 1000000) + 1;
 }
 
-export const promises: Record<string, PendingPromise> = {};
-export const handlers: Record<string, AsyncHandler> = {};
-export const events: Record<string, EventHandler> = {};
-
 export function useIFrame({
   mode,
   id,
@@ -26,6 +22,10 @@ export function useIFrame({
   debug: shouldDebug = false,
   ...props
 }: UseIFrameOptions) {
+  const promises = useRef<Record<string, PendingPromise>>({});
+  const handlers = useRef<Record<string, AsyncHandler>>({});
+  const events = useRef<Record<string, EventHandler>>({});
+
   // Whether or not this instance of the hook is the host.
   const isHost = mode === 'host';
 
@@ -48,7 +48,7 @@ export function useIFrame({
       }
 
       const { asyncId, payload: asyncPayload } = payload;
-      const promise = promises[`${asyncId}`];
+      const promise = promises.current[`${asyncId}`];
 
       shouldDebug && debug(id, mode, 'processing incoming async response', asyncPayload);
 
@@ -73,7 +73,7 @@ export function useIFrame({
       }
 
       const { asyncId, payload: asyncPayload } = payload;
-      const handler = handlers[payload.type];
+      const handler = handlers.current[payload.type];
 
       shouldDebug && debug(id, mode, 'processing incoming async request', payload);
 
@@ -99,7 +99,7 @@ export function useIFrame({
         }
       }
     } else {
-      const eventHandler = events[type];
+      const eventHandler = events.current[type];
 
       if (!eventHandler) {
         return;
@@ -144,7 +144,7 @@ export function useIFrame({
       const asyncId = generateId();
 
       const interval = setTimeout(() => {
-        const promise = promises[asyncId];
+        const promise = promises.current[asyncId];
 
         if (!!promise) {
           promise.reject(new Error('Request timed out.'));
@@ -153,7 +153,7 @@ export function useIFrame({
         removePromise(asyncId);
       }, overrideTimeout ?? timeout);
 
-      promises[asyncId] = {
+      promises.current[asyncId] = {
         resolve,
         reject,
         timeout: interval,
@@ -174,7 +174,7 @@ export function useIFrame({
 
   function removePromise(asyncId: string | number) {
     shouldDebug && debug(id, mode, 'removing promise', asyncId);
-    delete promises[asyncId];
+    delete promises.current[asyncId];
   }
 
   // Handle the handshake between host and client so we know when things are ready.
@@ -202,19 +202,19 @@ export function useIFrame({
 
   // Allow registering (and unregistering) handlers for async requests.
   function handle<Payload = any>(type: string, handler: AsyncHandler<Payload>) {
-    handlers[type] = handler;
+    handlers.current[type] = handler;
 
     return () => {
-      delete handlers[type];
+      delete handlers.current[type];
     };
   }
 
   // Allow registering and emitting of synchronous events.
   function listen<Payload = any>(type: string, handler: EventHandler<Payload>) {
-    events[type] = handler;
+    events.current[type] = handler;
 
     return () => {
-      delete events[type];
+      delete events.current[type];
     };
   }
 
