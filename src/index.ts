@@ -50,10 +50,10 @@ export function useIFrame({
       const { asyncId, payload: asyncPayload } = payload;
       const promise = promises[`${asyncId}`];
 
-      shouldDebug && debug(mode, 'processing incoming async response', asyncPayload);
+      shouldDebug && debug(id, mode, 'processing incoming async response', asyncPayload);
 
       if (!!promise) {
-        shouldDebug && debug(mode, 'found promise for async response');
+        shouldDebug && debug(id, mode, 'found promise for async response');
 
         clearTimeout(promise.timeout);
 
@@ -65,7 +65,7 @@ export function useIFrame({
 
         removePromise(asyncId);
       } else {
-        shouldDebug && debug(mode, 'no promise found for async response', asyncId);
+        shouldDebug && debug(id, mode, 'no promise found for async response', asyncId);
       }
     } else if (type === '_async_request') {
       if (typeof payload?.asyncId !== 'number' || !payload?.type || !payload?.payload) {
@@ -75,7 +75,7 @@ export function useIFrame({
       const { asyncId, payload: asyncPayload } = payload;
       const handler = handlers[payload.type];
 
-      shouldDebug && debug(mode, 'processing incoming async request', payload);
+      shouldDebug && debug(id, mode, 'processing incoming async request', payload);
 
       if (!!handler) {
         try {
@@ -105,7 +105,7 @@ export function useIFrame({
         return;
       }
 
-      shouldDebug && debug(mode, 'processing incoming sync event', type, payload);
+      shouldDebug && debug(id, mode, 'processing incoming sync event', type, payload);
 
       eventHandler(payload);
     }
@@ -131,7 +131,7 @@ export function useIFrame({
       id,
     };
 
-    shouldDebug && debug(mode, 'sending raw message', payload);
+    shouldDebug && debug(id, mode, 'sending raw message', payload);
 
     target.postMessage(payload, {
       targetOrigin: isHost ? remote : '*',
@@ -173,7 +173,7 @@ export function useIFrame({
   }
 
   function removePromise(asyncId: string | number) {
-    shouldDebug && debug(mode, 'removing promise', asyncId);
+    shouldDebug && debug(id, mode, 'removing promise', asyncId);
     delete promises[asyncId];
   }
 
